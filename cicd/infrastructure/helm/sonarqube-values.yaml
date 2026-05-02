@@ -1,0 +1,9 @@
+# SonarQube local overrides
+community:
+  enabled: true
+persistence:
+  enabled: true
+  size: 5Gi
+service:
+  type: ClusterIP
+monitoringPasscode: "admin123"

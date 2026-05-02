@@ -1,0 +1,72 @@
+# DevOps Observability Platform
+
+A platform for automating deployment and monitoring of microservices on Kubernetes.
+
+## Architecture & Process Flow
+
+```mermaid
+graph TD
+    subgraph "Developer Zone"
+        Code[Java/Spring Boot Code] --> Commit[Git Push]
+    end
+
+    subgraph "CI/CD Pipeline (Jenkins)"
+        Commit --> Build[Maven Build & Test]
+        Build --> Scan[SonarQube: Static Analysis]
+        Scan --> Docker[Build Image & Scanning]
+        Docker --> Nexus[Nexus: Artifact/Docker Registry]
+    end
+
+    subgraph "Kubernetes Cluster (k3d)"
+        Nexus --> Deploy[Helm Deploy]
+        Deploy --> Pods[Application: Pods / Services]
+        
+        subgraph "Monitoring & Observability"
+            Pods --> Prometheus[Prometheus: Metrics]
+            Prometheus --> Grafana[Grafana: Dashboards]
+        end
+    end
+
+    User[End User] --> Ingress[Traefik Ingress]
+    Ingress --> Pods
+```
+
+### Request & Artifact Flow Description
+1.  **Coding:** The developer pushes code to the repository.
+2.  **CI/CD Orchestration:** Jenkins detects changes, builds the artifact (JAR), runs unit tests, and sends reports to SonarQube.
+3.  **Quality Assurance:** SonarQube checks the Quality Gate. If successful, Jenkins builds the Docker image.
+4.  **Artifact Management:** The Docker image is tagged and pushed to the private registry in Nexus.
+5.  **Deployment (CD):** Jenkins updates the deployment on Kubernetes using Helm.
+6.  **Observability:** Prometheus automatically discovers new Pods (Service Discovery) and scrapes metrics (e.g., JVM, response time). Grafana visualizes this data.
+
+## Quick Start
+
+### Requirements
+- Docker
+- k3d (will be installed via `make install-deps`)
+- Helm
+- kubectl
+
+### Infrastructure Setup
+```bash
+make install-deps
+make cluster-up
+make tools-up
+```
+
+## Service Access
+
+### Jenkins
+- **URL:** http://localhost:8080 (requires port-forward)
+- **Command:** `kubectl port-forward svc/jenkins 8080:8080 -n jenkins`
+- **Password:** `kubectl exec -it svc/jenkins -n jenkins -c jenkins -- cat /run/secrets/additional/chart-admin-password`
+
+### SonarQube
+- **URL:** http://localhost:9000 (requires port-forward)
+- **Command:** `kubectl port-forward svc/sonarqube-sonarqube 9000:9000 -n sonarqube`
+- **Credentials:** admin / admin
+
+### Nexus
+- **URL:** http://localhost:8081 (requires port-forward)
+- **Command:** `kubectl port-forward svc/nexus-sonatype-nexus 8081:8081 -n nexus`
+- **Credentials:** admin / admin123

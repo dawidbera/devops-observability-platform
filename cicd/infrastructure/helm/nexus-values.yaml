@@ -1,0 +1,20 @@
+# Nexus local overrides
+nexus:
+  type: ClusterIP
+  docker:
+    enabled: true
+    registries:
+      - port: 5000
+        name: docker-internal
+persistence:
+  enabled: true
+  storageClass: "local-path"
+  storageSize: 8Gi
+# Resource limits for local dev
+resources:
+  requests:
+    cpu: 250m
+    memory: 1024Mi
+  limits:
+    cpu: 1000m
+    memory: 2048Mi

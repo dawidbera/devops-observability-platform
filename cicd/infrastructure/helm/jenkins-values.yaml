@@ -1,0 +1,11 @@
+# Jenkins local overrides
+controller:
+  serviceType: ClusterIP
+  # Simplest approach: just list plugin names without versions to let Helm resolve latest compatible
+  installPlugins:
+    - kubernetes
+    - workflow-aggregator
+    - git
+    - configuration-as-code
+    - sonar
+  javaOpts: "-Djenkins.install.runSetupWizard=false"
