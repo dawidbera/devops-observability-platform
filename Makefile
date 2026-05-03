@@ -38,3 +38,5 @@ tools-down:
 	@KUBECONFIG=$(HOME)/.kube/config helm uninstall jenkins -n jenkins || true
 	@KUBECONFIG=$(HOME)/.kube/config helm uninstall sonarqube -n sonarqube || true
 	@KUBECONFIG=$(HOME)/.kube/config helm uninstall nexus -n nexus || true
+	@KUBECONFIG=$(HOME)/.kube/config helm uninstall prometheus -n monitoring || true
+	@KUBECONFIG=$(HOME)/.kube/config helm uninstall grafana -n monitoring || true

@@ -1,0 +1,20 @@
+# Grafana local overrides
+service:
+  type: ClusterIP
+
+persistence:
+  enabled: true
+  size: 5Gi
+
+adminPassword: admin
+
+# Automatically discover datasources (Prometheus)
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+    - name: Prometheus
+      type: prometheus
+      url: http://prometheus-server.monitoring.svc.cluster.local
+      access: proxy
+      isDefault: true

@@ -24,6 +24,7 @@ graph TD
         subgraph "Monitoring & Observability"
             Pods --> Prometheus[Prometheus: Metrics]
             Prometheus --> Grafana[Grafana: Dashboards]
+            Prometheus --> Alerts[Alertmanager: Alerting]
         end
     end
 
@@ -37,7 +38,7 @@ graph TD
 3.  **Quality Assurance:** SonarQube checks the Quality Gate. If successful, Jenkins builds the Docker image.
 4.  **Artifact Management:** The Docker image is tagged and pushed to the private registry in Nexus.
 5.  **Deployment (CD):** Jenkins updates the deployment on Kubernetes using Helm.
-6.  **Observability:** Prometheus automatically discovers new Pods (Service Discovery) and scrapes metrics (e.g., JVM, response time). Grafana visualizes this data.
+6.  **Observability & Alerting:** Prometheus automatically discovers new Pods and scrapes metrics (JVM, latency). Grafana visualizes this data, and Alertmanager monitors critical thresholds to send notifications.
 
 ## Quick Start
 
@@ -70,3 +71,12 @@ make tools-up
 - **URL:** http://localhost:8081 (requires port-forward)
 - **Command:** `kubectl port-forward svc/nexus-sonatype-nexus 8081:8081 -n nexus`
 - **Credentials:** admin / admin123
+
+### Prometheus
+- **URL:** http://localhost:9090 (requires port-forward)
+- **Command:** `kubectl port-forward svc/prometheus-server 9090:80 -n monitoring`
+
+### Grafana
+- **URL:** http://localhost:3000 (requires port-forward)
+- **Command:** `kubectl port-forward svc/grafana 3000:80 -n monitoring`
+- **Credentials:** admin / admin

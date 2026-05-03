@@ -1,0 +1,23 @@
+# Prometheus local overrides
+server:
+  service:
+    type: ClusterIP
+  persistentVolume:
+    enabled: true
+    size: 5Gi
+  # Scraping intervals
+  global:
+    scrape_interval: 15s
+    evaluation_interval: 15s
+
+alertmanager:
+  enabled: true
+  persistentVolume:
+    enabled: true
+    size: 2Gi
+
+nodeExporter:
+  enabled: true
+
+pushgateway:
+  enabled: false
