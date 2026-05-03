@@ -52,6 +52,7 @@ graph TD
 ```bash
 make install-deps
 make cluster-up
+make tools-init
 make tools-up
 ```
 

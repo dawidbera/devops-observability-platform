@@ -2,7 +2,7 @@
 
 CLUSTER_NAME=obs-platform
 
-.PHONY: help install-deps cluster-up cluster-down cluster-status tools-up tools-down
+.PHONY: help install-deps cluster-up cluster-down cluster-status tools-init tools-plan tools-up tools-down
 
 help:
 	@echo "Usage:"
@@ -10,8 +10,10 @@ help:
 	@echo "  make cluster-up     - Create k3d cluster"
 	@echo "  make cluster-down   - Delete k3d cluster"
 	@echo "  make cluster-status - Check cluster status"
-	@echo "  make tools-up       - Deploy Jenkins and SonarQube"
-	@echo "  make tools-down     - Remove Jenkins and SonarQube"
+	@echo "  make tools-init     - Initialize Terraform"
+	@echo "  make tools-plan     - Plan Terraform changes"
+	@echo "  make tools-up       - Deploy all tools via Terraform (Jenkins, Sonar, Nexus, Monitoring)"
+	@echo "  make tools-down     - Remove all tools via Terraform"
 
 install-deps:
 	@echo "Installing k3d..."
@@ -30,13 +32,14 @@ cluster-status:
 	@KUBECONFIG=$(HOME)/.kube/config kubectl get nodes
 	@k3d cluster list
 
+tools-init:
+	@cd cicd/infrastructure/terraform && terraform init
+
+tools-plan:
+	@cd cicd/infrastructure/terraform && terraform plan
+
 tools-up:
-	@chmod +x cicd/infrastructure/k8s/deploy_tools.sh
-	@./cicd/infrastructure/k8s/deploy_tools.sh
+	@cd cicd/infrastructure/terraform && terraform apply -auto-approve
 
 tools-down:
-	@KUBECONFIG=$(HOME)/.kube/config helm uninstall jenkins -n jenkins || true
-	@KUBECONFIG=$(HOME)/.kube/config helm uninstall sonarqube -n sonarqube || true
-	@KUBECONFIG=$(HOME)/.kube/config helm uninstall nexus -n nexus || true
-	@KUBECONFIG=$(HOME)/.kube/config helm uninstall prometheus -n monitoring || true
-	@KUBECONFIG=$(HOME)/.kube/config helm uninstall grafana -n monitoring || true
+	@cd cicd/infrastructure/terraform && terraform destroy -auto-approve
