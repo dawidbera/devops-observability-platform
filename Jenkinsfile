@@ -20,6 +20,10 @@ spec:
     image: alpine/helm:3.12.0
     command: ['cat']
     tty: true
+  - name: trivy
+    image: aquasec/trivy:0.44.1
+    command: ['cat']
+    tty: true
 """
         }
     }
@@ -57,11 +61,15 @@ spec:
         stage('Docker Build & Push') {
             steps {
                 container('docker') {
-                    sh """
-                    docker build -t ${DOCKER_REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER} app/
-                    # Note: Pushing requires login or insecure registry config in k3d
-                    # docker push ${DOCKER_REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER}
-                    """
+                    sh "docker build -t ${DOCKER_REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER} app/"
+                }
+            }
+        }
+
+        stage('Security Scan (Trivy)') {
+            steps {
+                container('trivy') {
+                    sh "trivy image --severity HIGH,CRITICAL --exit-code 1 ${DOCKER_REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER}"
                 }
             }
         }
