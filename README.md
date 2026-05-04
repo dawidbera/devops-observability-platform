@@ -37,11 +37,26 @@ graph TD
 2.  **CI/CD Orchestration:** Jenkins detects changes, builds the artifact (JAR), runs unit tests, and sends reports to SonarQube.
 3.  **Quality Assurance:** SonarQube checks the Quality Gate. If successful, Jenkins builds the Docker image.
 4.  **Artifact Management:** The Docker image is tagged and pushed to the private registry in Nexus.
-5.  **Deployment (CD):** Jenkins updates the deployment on Kubernetes using Helm.
-6.  **Observability & Alerting:** Prometheus automatically discovers new Pods and scrapes metrics (JVM, latency). Grafana visualizes this data, and Alertmanager monitors critical thresholds to send notifications.
+### Deployment (CD)
+Jenkins updates the deployment on Kubernetes using Helm.
 
-## Quick Start
+### Observability & Alerting
+Prometheus automatically discovers new Pods and scrapes metrics (JVM, latency). Grafana visualizes this data, and Alertmanager monitors critical thresholds to send notifications.
+*   **Alert Rules:** Defined in `monitoring/prometheus/alert_rules.yml`.
 
+## Pipeline Features
+The project includes a multi-stage `Jenkinsfile` that automates:
+1.  **Checkout:** Retrieves the latest code.
+2.  **Build & Test:** Executes Maven build and JUnit tests.
+3.  **SonarQube Scan:** Performs static code analysis.
+4.  **Dockerization:** Builds and tags Docker images.
+5.  **Deployment:** Deploys the application to the `staging` namespace using Helm.
+
+## Testing
+Unit tests are located in `app/src/test`. Run them locally using:
+```bash
+cd app && mvn test
+```
 ### Requirements
 - Docker
 - k3d (will be installed via `make install-deps`)
