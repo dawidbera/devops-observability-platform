@@ -18,6 +18,18 @@ serviceAccount:
   # If not set and create is true, a name is generated using the fullname template
   name: "demo-app-sa"
 
+ingress:
+  enabled: true
+  className: "traefik"
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+  hosts:
+    - host: 
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
 resources:
   limits:
     cpu: 500m

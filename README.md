@@ -15,42 +15,54 @@ graph TD
         Build --> Scan[SonarQube: Static Analysis]
         Scan --> Docker[Build Image & Scanning]
         Docker --> Nexus[Nexus: Artifact/Docker Registry]
+        Secrets[K8s Secrets] -.-> Scan
+        Secrets -.-> Docker
     end
 
     subgraph "Kubernetes Cluster (k3d)"
         Nexus --> Deploy[Helm Deploy]
-        Deploy --> Pods[Application: Pods / Services]
+        
+        subgraph "Namespace: staging"
+            Deploy --> Pods[Application: Pods]
+            SA[ServiceAccount / RBAC] --- Pods
+        end
         
         subgraph "Monitoring & Observability"
             Pods --> Prometheus[Prometheus: Metrics]
             Prometheus --> Grafana[Grafana: Dashboards]
             Prometheus --> Alerts[Alertmanager: Alerting]
         end
+        
+        Ingress[Traefik Ingress] --> Pods
     end
 
-    User[End User] --> Ingress[Traefik Ingress]
-    Ingress --> Pods
+    User[End User] --> Ingress
 ```
 
 ### Request & Artifact Flow Description
 1.  **Coding:** The developer pushes code to the repository.
-2.  **CI/CD Orchestration:** Jenkins detects changes, builds the artifact (JAR), runs unit tests, and sends reports to SonarQube.
-3.  **Quality Assurance:** SonarQube checks the Quality Gate. If successful, Jenkins builds the Docker image.
+2.  **CI/CD Orchestration:** Jenkins detects changes, builds the artifact (JAR), runs unit tests.
+3.  **Security & Quality:** Jenkins retrieves credentials from **Kubernetes Secrets** to perform a SonarQube scan and push images.
 4.  **Artifact Management:** The Docker image is tagged and pushed to the private registry in Nexus.
-### Deployment (CD)
-Jenkins updates the deployment on Kubernetes using Helm.
+5.  **Deployment (CD):** Jenkins updates the deployment on Kubernetes using Helm in the `staging` namespace.
+6.  **Access Control:** The application runs with a dedicated **ServiceAccount** and restricted **RBAC** roles.
 
 ### Observability & Alerting
-Prometheus automatically discovers new Pods and scrapes metrics (JVM, latency). Grafana visualizes this data, and Alertmanager monitors critical thresholds to send notifications.
+Prometheus automatically discovers new Pods and scrapes metrics (JVM, latency). Grafana visualizes this data, and Alertmanager monitors critical thresholds.
 *   **Alert Rules:** Defined in `monitoring/prometheus/alert_rules.yml`.
 
 ## Pipeline Features
 The project includes a multi-stage `Jenkinsfile` that automates:
 1.  **Checkout:** Retrieves the latest code.
 2.  **Build & Test:** Executes Maven build and JUnit tests.
-3.  **SonarQube Scan:** Performs static code analysis.
-4.  **Dockerization:** Builds and tags Docker images.
-5.  **Deployment:** Deploys the application to the `staging` namespace using Helm.
+3.  **SonarQube Scan:** Performs static code analysis using secure credentials.
+4.  **Dockerization:** Builds and tags Docker images with vulnerability scanning (Trivy).
+5.  **Deployment:** Deploys to the `staging` namespace using Helm with Ingress and RBAC support.
+
+## Security & Compliance
+*   **Secrets Management:** No hardcoded passwords. Credentials for SonarQube and Nexus are managed via Kubernetes Secrets and injected at runtime.
+*   **RBAC (Role-Based Access Control):** Least privilege principle applied to the application namespace.
+*   **Image Scanning:** All images are scanned for vulnerabilities before deployment.
 
 ## Testing
 Unit tests are located in `app/src/test`. Run them locally using:
@@ -59,7 +71,7 @@ cd app && mvn test
 ```
 ### Requirements
 - Docker
-- k3d (will be installed via `make install-deps`)
+- k3d (installed via `make install-deps`)
 - Helm
 - kubectl
 
@@ -73,6 +85,10 @@ make tools-up
 
 ## Service Access
 
+### Application (Staging)
+- **URL:** [http://localhost/api/hello](http://localhost/api/hello)
+- **Note:** Access via port 80 (standard HTTP) mapped by k3d.
+
 ### Jenkins
 - **URL:** http://localhost:8080 (requires port-forward)
 - **Command:** `kubectl port-forward svc/jenkins 8080:8080 -n jenkins`
@@ -81,18 +97,13 @@ make tools-up
 ### SonarQube
 - **URL:** http://localhost:9000 (requires port-forward)
 - **Command:** `kubectl port-forward svc/sonarqube-sonarqube 9000:9000 -n sonarqube`
-- **Credentials:** admin / admin
+- **Credentials:** Managed via K8s Secrets (`sonarqube-creds`)
 
 ### Nexus
 - **URL:** http://localhost:8081 (requires port-forward)
 - **Command:** `kubectl port-forward svc/nexus-sonatype-nexus 8081:8081 -n nexus`
-- **Credentials:** admin / admin123
+- **Credentials:** Managed via K8s Secrets (`nexus-creds`)
 
-### Prometheus
-- **URL:** http://localhost:9090 (requires port-forward)
-- **Command:** `kubectl port-forward svc/prometheus-server 9090:80 -n monitoring`
-
-### Grafana
-- **URL:** http://localhost:3000 (requires port-forward)
-- **Command:** `kubectl port-forward svc/grafana 3000:80 -n monitoring`
-- **Credentials:** admin / admin
+### Prometheus & Grafana
+- **Prometheus:** `kubectl port-forward svc/prometheus-server 9090:80 -n monitoring`
+- **Grafana:** [http://localhost:3000](http://localhost:3000) (admin / admin)
