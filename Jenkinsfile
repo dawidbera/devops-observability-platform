@@ -10,6 +10,17 @@ spec:
     image: maven:3.9-eclipse-temurin-17
     command: ['cat']
     tty: true
+    env:
+    - name: SONAR_USER
+      valueFrom:
+        secretKeyRef:
+          name: sonarqube-creds
+          key: username
+    - name: SONAR_PWD
+      valueFrom:
+        secretKeyRef:
+          name: sonarqube-creds
+          key: password
   - name: docker
     image: docker:24.0.5-dind
     securityContext:
@@ -52,8 +63,7 @@ spec:
         stage('SonarQube Analysis') {
             steps {
                 container('maven') {
-                    // This assumes sonar-maven-plugin is available and credentials are set in Jenkins
-                    sh 'mvn -f app/pom.xml sonar:sonar -Dsonar.host.url=${SONAR_URL} -Dsonar.login=admin -Dsonar.password=admin'
+                    sh "mvn -f app/pom.xml sonar:sonar -Dsonar.host.url=${SONAR_URL} -Dsonar.login=${SONAR_USER} -Dsonar.password=${SONAR_PWD}"
                 }
             }
         }
