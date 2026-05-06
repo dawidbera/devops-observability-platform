@@ -13,27 +13,26 @@ graph TD
     subgraph "CI/CD Pipeline (Jenkins)"
         Commit --> Build[Maven Build & Test]
         Build --> Scan[SonarQube: Static Analysis]
-        Scan --> Docker[Build Image & Scanning]
-        Docker --> Nexus[Nexus: Artifact/Docker Registry]
+        Scan --> Docker[Build, Login & Push]
+        Docker --> Nexus[Nexus: Docker Registry]
         Secrets[K8s Secrets] -.-> Scan
         Secrets -.-> Docker
     end
 
     subgraph "Kubernetes Cluster (k3d)"
-        Nexus --> Deploy[Helm Deploy]
+        Nexus --> Deploy[Helm Upgrade/Install]
         
         subgraph "Namespace: staging"
-            Deploy --> Pods[Application: Pods]
-            SA[ServiceAccount / RBAC] --- Pods
+            Deploy --> Pods[Spring Boot Pods]
+            Ingress[Traefik Ingress] --> Pods
+            SA[RBAC: ServiceAccount] --- Pods
         end
         
         subgraph "Monitoring & Observability"
-            Pods --> Prometheus[Prometheus: Metrics]
-            Prometheus --> Grafana[Grafana: Dashboards]
-            Prometheus --> Alerts[Alertmanager: Alerting]
+            Pods --> Prometheus[Prometheus: Scrape Actuator]
+            Prometheus --> Grafana[Grafana: Auto-import Dashboards]
+            Prometheus --> Alerts[Alertmanager: Rule Evaluation]
         end
-        
-        Ingress[Traefik Ingress] --> Pods
     end
 
     User[End User] --> Ingress
@@ -41,15 +40,18 @@ graph TD
 
 ### Request & Artifact Flow Description
 1.  **Coding:** The developer pushes code to the repository.
-2.  **CI/CD Orchestration:** Jenkins detects changes, builds the artifact (JAR), runs unit tests.
-3.  **Security & Quality:** Jenkins retrieves credentials from **Kubernetes Secrets** to perform a SonarQube scan and push images.
-4.  **Artifact Management:** The Docker image is tagged and pushed to the private registry in Nexus.
-5.  **Deployment (CD):** Jenkins updates the deployment on Kubernetes using Helm in the `staging` namespace.
-6.  **Access Control:** The application runs with a dedicated **ServiceAccount** and restricted **RBAC** roles.
+2.  **CI/CD Orchestration:** Jenkins detects changes, builds the JAR, and runs unit tests using Maven.
+3.  **Security & Quality:** Jenkins retrieves credentials from **Kubernetes Secrets** to perform a SonarQube scan and authenticate with the Docker registry.
+4.  **Artifact Management:** The Docker image is built, scanned for vulnerabilities (Trivy), and pushed to the **Nexus Docker Registry**.
+5.  **Deployment (CD):** Jenkins deploys the application to the `staging` namespace using **Helm**, pulling the image from the local Nexus.
+6.  **Access Control:** The application runs with a dedicated **ServiceAccount** and restricted **RBAC** roles (least privilege).
 
 ### Observability & Alerting
-Prometheus automatically discovers new Pods and scrapes metrics (JVM, latency). Grafana visualizes this data, and Alertmanager monitors critical thresholds.
-*   **Alert Rules:** Defined in `monitoring/prometheus/alert_rules.yml`.
+Prometheus automatically discovers Pods and scrapes metrics via Spring Boot Actuator. 
+*   **Alerting:** Custom rules for health and latency are evaluated by Prometheus and sent to Alertmanager.
+*   **Visualization:** Grafana is pre-configured with a Prometheus datasource and automatically imports the **Spring Boot Observability** dashboard.
+*   **Access:** Defined in `monitoring/prometheus/alert_rules.yml` and integrated via Helm values.
+
 
 ## Pipeline Features
 The project includes a multi-stage `Jenkinsfile` that automates:
@@ -107,3 +109,4 @@ make tools-up
 ### Prometheus & Grafana
 - **Prometheus:** `kubectl port-forward svc/prometheus-server 9090:80 -n monitoring`
 - **Grafana:** [http://localhost:3000](http://localhost:3000) (admin / admin)
+- **Grafana Command:** `kubectl port-forward svc/grafana 3000:80 -n monitoring`

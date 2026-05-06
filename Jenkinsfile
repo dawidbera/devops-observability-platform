@@ -27,6 +27,19 @@ spec:
       privileged: true
     command: ['cat']
     tty: true
+    env:
+    - name: NEXUS_USER
+      valueFrom:
+        secretKeyRef:
+          name: nexus-creds
+          key: username
+    - name: NEXUS_PWD
+      valueFrom:
+        secretKeyRef:
+          name: nexus-creds
+          key: password
+    - name: DOCKER_TLS_CERTDIR
+      value: ""
   - name: helm
     image: alpine/helm:3.12.0
     command: ['cat']
@@ -68,10 +81,15 @@ spec:
             }
         }
 
-        stage('Docker Build & Push') {
+        stage('Docker Build') {
             steps {
                 container('docker') {
-                    sh "docker build -t ${DOCKER_REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER} app/"
+                    sh """
+                    # Start Docker daemon in background
+                    dockerd-entrypoint.sh --insecure-registry ${DOCKER_REGISTRY} &
+                    sleep 5
+                    docker build -t ${DOCKER_REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER} app/
+                    """
                 }
             }
         }
@@ -80,6 +98,18 @@ spec:
             steps {
                 container('trivy') {
                     sh "trivy image --severity HIGH,CRITICAL --exit-code 1 ${DOCKER_REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER}"
+                }
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
+                container('docker') {
+                    sh """
+                    # Login using container env variables (escaped for Jenkins)
+                    echo \$NEXUS_PWD | docker login ${DOCKER_REGISTRY} -u \$NEXUS_USER --password-stdin
+                    docker push ${DOCKER_REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER}
+                    """
                 }
             }
         }

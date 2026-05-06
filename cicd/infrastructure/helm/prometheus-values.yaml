@@ -1,4 +1,6 @@
 # Prometheus local overrides
+# This file configures the Prometheus server, Alertmanager, and alerting rules.
+# It integrates custom Spring Boot alerts for application health and latency.
 server:
   service:
     type: ClusterIP
@@ -15,6 +17,28 @@ alertmanager:
   persistentVolume:
     enabled: true
     size: 2Gi
+
+serverFiles:
+  alerting_rules.yml:
+    groups:
+      - name: spring-boot-alerts
+        rules:
+          - alert: SpringBootAppDown
+            expr: up{job="demo-app"} == 0
+            for: 1m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Spring Boot Application is down"
+              description: "The application {{ $labels.instance }} has been down for more than 1 minute."
+          - alert: HighRequestLatency
+            expr: hello_request_seconds_sum / hello_request_seconds_count > 0.5
+            for: 2m
+            labels:
+              severity: warning
+            annotations:
+              summary: "High Request Latency"
+              description: "Hello endpoint latency is above 0.5s for more than 2 minutes."
 
 nodeExporter:
   enabled: true
