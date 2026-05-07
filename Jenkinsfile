@@ -76,7 +76,12 @@ spec:
         stage('SonarQube Analysis') {
             steps {
                 container('maven') {
-                    sh "mvn -f app/pom.xml sonar:sonar -Dsonar.host.url=${SONAR_URL} -Dsonar.login=${SONAR_USER} -Dsonar.password=${SONAR_PWD}"
+                    withSonarQubeEnv('SonarQube') {
+                        sh "mvn -f app/pom.xml sonar:sonar -Dsonar.host.url=${SONAR_URL} -Dsonar.login=${SONAR_USER} -Dsonar.password=${SONAR_PWD}"
+                    }
+                }
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
                 }
             }
         }
@@ -121,7 +126,8 @@ spec:
                     helm upgrade --install demo-app cicd/infrastructure/helm/app-chart \\
                         --namespace staging --create-namespace \\
                         --set image.repository=${DOCKER_REGISTRY}/${IMAGE_NAME} \\
-                        --set image.tag=${BUILD_NUMBER}
+                        --set image.tag=${BUILD_NUMBER} \\
+                        --wait --timeout 5m
                     """
                 }
             }

@@ -9,3 +9,21 @@ controller:
     - configuration-as-code
     - sonar
   javaOpts: "-Djenkins.install.runSetupWizard=false"
+
+# Jenkins Configuration as Code
+sidecars:
+  configAutoReload:
+    enabled: true
+
+configurationAsCode:
+  enabled: true
+  jenkinsChangelog: false
+  nodes: []
+  unclassified:
+    sonarGlobalConfiguration:
+      buildWrapperEnabled: true
+      installations:
+        - name: "SonarQube"
+          serverUrl: "http://sonarqube-sonarqube.sonarqube:9000"
+          # Token or credentials would go here in a real setup
+          # For local dev we use the default admin credentials passed in env

@@ -30,7 +30,9 @@ graph TD
         
         subgraph "Monitoring & Observability"
             Pods --> Prometheus[Prometheus: Scrape Actuator]
+            Pods --> Loki[Loki: Log Aggregation]
             Prometheus --> Grafana[Grafana: Auto-import Dashboards]
+            Loki --> Grafana
             Prometheus --> Alerts[Alertmanager: Rule Evaluation]
         end
     end
@@ -41,16 +43,17 @@ graph TD
 ### Request & Artifact Flow Description
 1.  **Coding:** The developer pushes code to the repository.
 2.  **CI/CD Orchestration:** Jenkins detects changes, builds the JAR, and runs unit tests using Maven.
-3.  **Security & Quality:** Jenkins retrieves credentials from **Kubernetes Secrets** to perform a SonarQube scan and authenticate with the Docker registry.
+3.  **Security & Quality:** Jenkins retrieves credentials from **Kubernetes Secrets** to perform a SonarQube scan and authenticate with the Docker registry. Pipeline enforces **SonarQube Quality Gates**.
 4.  **Artifact Management:** The Docker image is built, scanned for vulnerabilities (Trivy), and pushed to the **Nexus Docker Registry**.
-5.  **Deployment (CD):** Jenkins deploys the application to the `staging` namespace using **Helm**, pulling the image from the local Nexus.
+5.  **Deployment (CD):** Jenkins deploys the application to the `staging` namespace using **Helm**, pulling the image from the local Nexus. The deployment is verified using the `--wait` flag.
 6.  **Access Control:** The application runs with a dedicated **ServiceAccount** and restricted **RBAC** roles (least privilege).
 
 ### Observability & Alerting
 Prometheus automatically discovers Pods and scrapes metrics via Spring Boot Actuator. 
-*   **Alerting:** Custom rules for health and latency are evaluated by Prometheus and sent to Alertmanager.
-*   **Visualization:** Grafana is pre-configured with a Prometheus datasource and automatically imports the **Spring Boot Observability** dashboard.
-*   **Access:** Defined in `monitoring/prometheus/alert_rules.yml` and integrated via Helm values.
+*   **Logging:** Loki collects logs from all pods via Promtail, accessible directly in Grafana.
+*   **Alerting:** Custom rules for health and latency are evaluated by Prometheus and sent to Alertmanager (configured with dummy receiver for testing).
+*   **Visualization:** Grafana is pre-configured with Prometheus and Loki datasources.
+*   **Dynatrace Integration:** While this platform uses Prometheus/Loki for local development, it is architected to support Dynatrace via the OneAgent Operator. Integration can be enabled by applying the Dynatrace CRD and configuring the API token in Kubernetes Secrets.
 
 
 ## Pipeline Features
