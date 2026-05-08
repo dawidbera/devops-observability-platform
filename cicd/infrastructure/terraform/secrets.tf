@@ -1,7 +1,7 @@
-resource "kubernetes_secret" "sonarqube_credentials" {
+resource "kubernetes_secret_v1" "sonarqube_credentials" {
   metadata {
     name      = "sonarqube-creds"
-    namespace = kubernetes_namespace.jenkins.metadata[0].name
+    namespace = kubernetes_namespace_v1.jenkins.metadata[0].name
   }
 
   data = {
@@ -12,10 +12,10 @@ resource "kubernetes_secret" "sonarqube_credentials" {
   type = "Opaque"
 }
 
-resource "kubernetes_secret" "nexus_credentials" {
+resource "kubernetes_secret_v1" "nexus_credentials" {
   metadata {
     name      = "nexus-creds"
-    namespace = kubernetes_namespace.jenkins.metadata[0].name
+    namespace = kubernetes_namespace_v1.jenkins.metadata[0].name
   }
 
   data = {

@@ -19,6 +19,12 @@ install-deps:
 	@echo "Installing k3d..."
 	@curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=v5.6.0 bash
 	@echo "k3d installed successfully."
+	@echo "Installing terraform..."
+	@curl -LO https://releases.hashicorp.com/terraform/1.9.0/terraform_1.9.0_linux_amd64.zip
+	@unzip -o terraform_1.9.0_linux_amd64.zip
+	@sudo mv terraform /usr/local/bin/
+	@rm terraform_1.9.0_linux_amd64.zip LICENSE.txt
+	@echo "terraform installed successfully."
 
 cluster-up:
 	@chmod +x cicd/infrastructure/k8s/create_cluster.sh

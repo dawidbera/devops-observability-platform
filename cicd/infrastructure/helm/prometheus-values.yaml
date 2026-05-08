@@ -54,7 +54,10 @@ serverFiles:
               description: "Hello endpoint latency is above 0.5s for more than 2 minutes."
 
 nodeExporter:
-  enabled: true
+  enabled: false
+
+prometheus-node-exporter:
+  enabled: false
 
 pushgateway:
   enabled: false

@@ -20,6 +20,6 @@ else
 fi
 
 echo "Switching context to k3d-${CLUSTER_NAME}..."
-kubectl config use-context "k3d-${CLUSTER_NAME}"
+k3d kubeconfig merge "${CLUSTER_NAME}" --kubeconfig-merge-default --kubeconfig-switch-context
 
 echo "Cluster is ready."
