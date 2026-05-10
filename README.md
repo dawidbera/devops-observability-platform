@@ -61,6 +61,8 @@ Prometheus automatically discovers Pods and scrapes metrics via Spring Boot Actu
 *   **Alerting:** Custom rules for health and latency are evaluated by Prometheus and sent to Alertmanager.
 *   **Visualization:** Grafana is pre-configured with Prometheus and Loki datasources and a custom Spring Boot dashboard.
 
+![Grafana Live Metrics](docs/images/grafana-live-metrics.png)
+
 
 ## Pipeline Features
 The project includes a multi-stage `Jenkinsfile` that automates:
