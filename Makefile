@@ -2,7 +2,7 @@
 
 CLUSTER_NAME=obs-platform
 
-.PHONY: help install-deps cluster-up cluster-down cluster-status tools-init tools-plan tools-up tools-down
+.PHONY: help install-deps cluster-up cluster-down cluster-status tools-init tools-plan tools-up tools-down dashboard
 
 help:
 	@echo "Usage:"
@@ -14,6 +14,10 @@ help:
 	@echo "  make tools-plan     - Plan Terraform changes"
 	@echo "  make tools-up       - Deploy all tools via Terraform (Jenkins, Sonar, Nexus, Monitoring)"
 	@echo "  make tools-down     - Remove all tools via Terraform"
+	@echo "  make dashboard      - Open all tool dashboards (port-forward)"
+
+dashboard:
+	@./cicd/infrastructure/k8s/start_ports.sh
 
 install-deps:
 	@echo "Installing k3d..."
